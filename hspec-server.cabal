@@ -3,13 +3,14 @@
 
 name:                hspec-server
 version:             0.1.0.0
--- synopsis:            
--- description:         
+synopsis:            Test Framework for Server's status
+description:         Hspec-Server is test framework for checking server's status.
+                     It is inspired by the Ruby library ServerSpec.
 license:             BSD3
 license-file:        LICENSE
 author:              Junji Hashimoto
 maintainer:          junji.hashimoto@gmail.com
--- copyright:           
+stability:           Experimental
 category:            Testing
 build-type:          Simple
 -- extra-source-files:  
@@ -19,13 +20,15 @@ library
   exposed-modules:     Test.Hspec.Server
   -- other-modules:       
   -- other-extensions:    
-  build-depends:       base >=4.7 && <4.8
+  build-depends:       base >=4.6 && <5
                      , hspec >= 2
                      , hspec-core >= 2
                      , transformers
                      , process
-                     , shelly
                      , temporary
+                     , containers
+                     , HUnit
+                     , regex-posix
   -- hs-source-dirs:      
   default-language:    Haskell2010
 
@@ -37,6 +40,5 @@ test-suite test
 
     build-depends: base
                  , hspec
-                 , shelly
                  , hspec-server
     Default-Language:   Haskell2010
