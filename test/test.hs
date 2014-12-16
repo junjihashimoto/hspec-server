@@ -1,6 +1,6 @@
 import Test.Hspec hiding (it,describe)
 import Test.Hspec.Server
---import Test.Hspec.Contrib.Retry
+import Test.Hspec.Contrib.Retry
 import Control.Monad.IO.Class
 
 main :: IO ()
@@ -19,5 +19,7 @@ main = hspec $ do
         service "cron" `includes` Running
         service "atd" `includes` Running
       it "command test" $ do
-        -- Retry 10 $ --currently does not support Retry. I want to use Retry !!!
         command "ls" [] [] `includes` Exit 0
+      it "retry test" $ do
+        retryWith 10 $ --currently does not support Retry. I want to use retryWith !!!
+          command "ls" [] [] `includes` Exit 0

@@ -4,8 +4,10 @@ module Test.Hspec.Server.Type where
 import System.Exit
 import qualified Control.Monad.Trans.State as ST
 import Control.Monad.Trans.Writer
+import qualified Test.Hspec.Core.Spec as Hspec
 
 import Data.Monoid
+import Data.List
 import Data.Maybe
 import qualified Data.Set as S
 
@@ -37,16 +39,19 @@ data ServerExampleData dat = ServerExampleData {
 
 type ServerExample dat = ST.StateT (ServerExampleData dat) IO
 
--- instance (ServerType dat) => Hspec.Example (ServerExample dat ()) where
---   type Arg (ServerExample dat ()) = ()
---   evaluateExample e = Hspec.evaluateExample (\() -> e)
-
--- instance Hspec.Example (a -> (ServerExample dat ())) where
---     type Arg (a -> (ServerExample dat ())) = a
---     evaluateExample e _ action _ = (action e >> return Hspec.Success) `E.catches` [
---         E.Handler (\(HUnit.HUnitFailure err) -> return (Hspec.Fail err))
---       , E.Handler (return :: Hspec.Result -> IO Hspec.Result)
-      -- ]
+instance (ServerType dat) => Hspec.Example (ServerExample dat a) where
+  type Arg (ServerExample dat a) = dat
+  evaluateExample example params action =
+    Hspec.evaluateExample
+      (action $ \dat' -> do
+        os <- detectOS dat'
+        _ <- ST.evalStateT example ServerExampleData {
+            serverData = dat'
+          , serverOS = fromJust os
+          }
+        return ())
+      params
+      ($ ())
 
 type ServerSpec dat = Writer [ServerSpecTree dat] ()
 
@@ -113,3 +118,45 @@ getStderr :: CommandStatus -> Maybe String
 getStderr (Stderr code) = Just code
 getStderr (CAnd statuss) = listToMaybe $ catMaybes $ map getStdout $ S.toList statuss
 getStderr _ = Nothing
+
+
+detectOS :: ServerType dat => dat -> IO (Maybe ServerOS)
+detectOS dat = do
+  (_,out,_) <- cmd dat "sh" ["-c","echo $OSTYPE"] []
+  case (head (lines out)) of
+    "linux-gnu" -> detectLinux dat
+    'd':'a':'r':'w':'i':'n':o -> return $ Just $ MacOS o
+    "msys" -> return $ Just $ Windows "msys"
+    "cygwin" -> return $ Just $ Windows "cygwin"
+    "win32" -> return $ Just $ Windows "win32"
+    "win64" -> return $ Just $ Windows "win64"
+    'f':'r':'e':'e':'b':'s':'d':o -> return $ Just $ FreeBSD o
+    o -> return $ Just $ OtherOS o
+
+detectLinux :: ServerType dat => dat -> IO (Maybe ServerOS)
+detectLinux dat = do
+  (_code,_out,_) <- cmd dat "cat" ["/etc/lsb-release"] []
+  if _code == ExitSuccess
+    then do
+      let tag = "DISTRIB_RELEASE="
+      let v = listToMaybe $ map (drop (length tag)) $ filter (isPrefixOf "DISTRIB_RELEASE=") (lines _out)
+      case v of
+        Just v' -> return $ Just $ Ubuntu v'
+        Nothing -> return $ Just $ Ubuntu ""
+    else do
+      (_code,_out,_) <- cmd dat "cat" ["/etc/debian_version"] []
+      if _code == ExitSuccess
+        then return $ Just $ Debian _out
+        else do
+          (_code,_out,_) <- cmd dat "cat" ["/etc/centos-release"] []
+          if _code == ExitSuccess
+            then return $ Just $ CentOS _out
+            else do
+              (_code,_out,_) <- cmd dat "cat" ["/etc/fedora-release"] []
+              if _code == ExitSuccess
+                then return $ Just $ Fedora _out
+                else do
+                  (_code,_out,_) <- cmd dat "cat" ["/etc/redhat-release"] []
+                  if _code == ExitSuccess
+                    then return $ Just $ Fedora _out
+                    else return $ Just $ LinuxOther ""
