@@ -6,6 +6,7 @@ import qualified Control.Monad.Trans.State as ST
 import Control.Monad.Trans.Writer
 import qualified Test.Hspec.Core.Spec as Hspec
 
+import Control.Monad
 import Data.Monoid
 import Data.List
 import Data.Maybe
@@ -122,16 +123,23 @@ getStderr _ = Nothing
 
 detectOS :: ServerType dat => dat -> IO (Maybe ServerOS)
 detectOS dat = do
-  (_,out,_) <- cmd dat "sh" ["-c","echo $OSTYPE"] []
-  case (head (lines out)) of
-    "linux-gnu" -> detectLinux dat
-    'd':'a':'r':'w':'i':'n':o -> return $ Just $ MacOS o
-    "msys" -> return $ Just $ Windows "msys"
-    "cygwin" -> return $ Just $ Windows "cygwin"
-    "win32" -> return $ Just $ Windows "win32"
-    "win64" -> return $ Just $ Windows "win64"
-    'f':'r':'e':'e':'b':'s':'d':o -> return $ Just $ FreeBSD o
-    o -> return $ Just $ OtherOS o
+  v@(code,out,_) <- cmd dat "sh" ["-c","echo $OSTYPE"] []
+  when (code /= ExitSuccess) $ do
+    error $ "detectOS's error;" ++ show v
+  case listToMaybe (lines out) of
+    Just str -> checkEnv str
+    Nothing -> return Nothing
+  where
+    checkEnv str =   
+      case str of
+        "linux-gnu" -> detectLinux dat
+        'd':'a':'r':'w':'i':'n':o -> return $ Just $ MacOS o
+        "msys" -> return $ Just $ Windows "msys"
+        "cygwin" -> return $ Just $ Windows "cygwin"
+        "win32" -> return $ Just $ Windows "win32"
+        "win64" -> return $ Just $ Windows "win64"
+        'f':'r':'e':'e':'b':'s':'d':o -> return $ Just $ FreeBSD o
+        o -> return $ Just $ OtherOS o
 
 detectLinux :: ServerType dat => dat -> IO (Maybe ServerOS)
 detectLinux dat = do

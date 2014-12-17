@@ -1,6 +1,7 @@
 module Test.Hspec.Server.Command where
 
 import System.Exit
+import Control.Monad
 import Control.Monad.IO.Class
 import Data.Monoid
 import Text.Regex.Posix
@@ -10,7 +11,9 @@ import Test.Hspec.Server.Core
 package :: ServerType dat => String -> ServerExample dat ServerStatus
 package pkg = do
   dat <- getServerData
-  (_,out,_) <- liftIO $ cmd dat "dpkg" ["-l",pkg] []
+  c@(code,out,_) <- liftIO $ cmd dat "dpkg" ["-l",pkg] []
+  when (code /= ExitSuccess) $ do
+    error $ "pacakge error:" ++ show c
   if or (map (\v -> v  =~ ("^ii +" <> pkg <> " ")) (lines out))
     then return Installed
     else return None
@@ -26,7 +29,9 @@ process ps = do
 service :: ServerType dat => String -> ServerExample dat ServerStatus
 service s = do
   dat <- getServerData
-  (_,out,_) <- liftIO $ cmd dat ("/etc/init.d/"++s) ["status"] []
+  c@(code,out,_) <- liftIO $ cmd dat ("/etc/init.d/"++s) ["status"] []
+  when (code /= ExitSuccess) $ do
+    error $ "service error:" ++ show c
   if or (map (\v ->
                (v  =~ ("is running" :: String)) ||
                (v  =~ ("start/running" :: String))
@@ -37,7 +42,9 @@ service s = do
 port :: ServerType dat => Int -> ServerExample dat ServerStatus
 port p = do
   dat <- getServerData
-  (_,out,_) <- liftIO $ cmd dat "netstat" ["-tanp"] []
+  c@(code,out,_) <- liftIO $ cmd dat "netstat" ["-tanp"] []
+  when (code /= ExitSuccess) $ do
+    error $ "port error:" ++ show c
   if or (map (\v ->
                (v  =~ ("^tcp[ 6] +[0-9]+ +[0-9]+ :::" <> show p <> " +[^ ]+ +LISTEN")) ||
                (v  =~ ("^tcp[ 6] +[0-9]+ +[0-9]+ [0-9]+\\.[0-9]+\\.[0-9]+\\.[0-9]+:" <> show p <> " +[^ ]+ +LISTEN"))
