@@ -1,25 +1,23 @@
-import Test.Hspec hiding (it,describe)
+import Data.Monoid
+import Test.Hspec
 import Test.Hspec.Server
--- import Test.Hspec.Contrib.Retry
+import Test.Hspec.Contrib.Retry
 import Control.Monad.IO.Class
 
 main :: IO ()
 main = hspec $ do
-  serverSpec localhost $ do
-    describe "hoge" $ do
+    describe "hoge" $ with localhost $ do
       it "package test" $ do
-        dat <- getServerData
-        os <- liftIO $ detectOS dat
-        liftIO $ os `shouldBe` (Just $ Ubuntu "14.04")
+        os <- getServerOS
+        liftIO $ os `shouldBe` (Just $ Ubuntu "12.04")
       it "package test" $ do
-        package "zookeeper" `includes` Installed
+        package "zookeeper" @>= Installed
       it "port test" $ do
-        port 2181 `includes` Listening
+        port 2181 @>= Listening
       it "service test" $ do
-        service "cron" `includes` Running
-        service "atd" `includes` Running
+        service "zookeeper" @>= Running
       it "command test" $ do
-        command "ls" [] [] `includes` Exit 0
-      -- it "retry test" $ do
-      --   retryWith 10 $ --currently does not support Retry. I want to use retryWith !!!
-      --     command "ls" [] [] `includes` Exit 0
+        command "echo" ["hoge"] [] @>=  Exit 0 <> Stdout "hoge\n"
+      it "retry test" $ do
+        retryWith 10 $
+          command "ls" [] [] @>= Exit 0

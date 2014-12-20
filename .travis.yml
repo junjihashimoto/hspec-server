@@ -1,0 +1,14 @@
+language: haskell
+
+ghc:
+  - 7.8
+  - 7.6
+
+install:
+  - sudo apt-get update
+  - sudo apt-get install zookeeperd 
+  - cabal update
+  - cabal install -j --only-dep  --enable-tests --force-reinstalls
+
+script:
+  - cabal test

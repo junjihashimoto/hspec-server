@@ -2,9 +2,10 @@
 module Test.Hspec.Server.Type where
 
 import System.Exit
-import qualified Control.Monad.Trans.State as ST
+import Control.Monad.Trans.Reader
 import Control.Monad.Trans.Writer
 import qualified Test.Hspec.Core.Spec as Hspec
+import Test.Hspec (before)
 
 import Control.Monad
 import Data.Monoid
@@ -29,38 +30,25 @@ data ServerOS =
 type ServerName = String
 
 class ServerType a where
-  setup :: a -> IO a
-  name :: a -> ServerName
-  cmd :: a -> FilePath -> [String] -> String -> IO (ExitCode,String,String)
+  stSetup :: a -> IO a
+  stOS :: a -> Maybe ServerOS
+  stName :: a -> ServerName
+  stCmd :: a -> FilePath -> [String] -> String -> IO (ExitCode,String,String)
 
-data ServerExampleData dat = ServerExampleData {
-    serverData :: !dat
-  , serverOS :: !ServerOS
-  }
+type ServerExample dat = ReaderT dat IO
 
-type ServerExample dat = ST.StateT (ServerExampleData dat) IO
+with :: ServerType dat => dat -> Hspec.SpecWith dat -> Hspec.Spec
+with d = before (stSetup d)
 
-instance (ServerType dat) => Hspec.Example (ServerExample dat a) where
-  type Arg (ServerExample dat a) = dat
+instance (ServerType dat) => Hspec.Example (ServerExample dat ()) where
+  type Arg (ServerExample dat ()) = dat
   evaluateExample example params action =
     Hspec.evaluateExample
-      (action $ \dat' -> do
-        os <- detectOS dat'
-        _ <- ST.evalStateT example ServerExampleData {
-            serverData = dat'
-          , serverOS = fromJust os
-          }
-        return ())
+      (action $ runReaderT example)
       params
       ($ ())
 
-type ServerSpec dat = Writer [ServerSpecTree dat] ()
-
-data ServerSpecTree dat
-    = ServerSpecGroup String [ServerSpecTree dat]
-    | ServerSpecItem String (ServerExample dat ())
-
-class Show a => Sets a where
+class (Eq a ,Show a) => Sets a where
   include :: a -> a -> Bool
 
 data ServerStatus =
@@ -112,18 +100,18 @@ instance Sets CommandStatus where
 
 getStdout :: CommandStatus -> Maybe String
 getStdout (Stdout code) = Just code
-getStdout (CAnd statuss) = listToMaybe $ catMaybes $ map getStdout $ S.toList statuss
+getStdout (CAnd statuss) = listToMaybe $ mapMaybe getStdout $ S.toList statuss
 getStdout _ = Nothing
 
 getStderr :: CommandStatus -> Maybe String
 getStderr (Stderr code) = Just code
-getStderr (CAnd statuss) = listToMaybe $ catMaybes $ map getStdout $ S.toList statuss
+getStderr (CAnd statuss) = listToMaybe $ mapMaybe getStdout $ S.toList statuss
 getStderr _ = Nothing
 
 
 detectOS :: ServerType dat => dat -> IO (Maybe ServerOS)
 detectOS dat = do
-  v@(code,out,_) <- cmd dat "sh" ["-c","echo $OSTYPE"] []
+  v@(code,out,_) <- stCmd dat "bash" ["-c","echo $OSTYPE"] []
   when (code /= ExitSuccess) $ do
     error $ "detectOS's error;" ++ show v
   case listToMaybe (lines out) of
@@ -143,7 +131,8 @@ detectOS dat = do
 
 detectLinux :: ServerType dat => dat -> IO (Maybe ServerOS)
 detectLinux dat = do
-  (_code,_out,_) <- cmd dat "cat" ["/etc/lsb-release"] []
+  let cmd = stCmd
+  c@(_code,_out,_) <- cmd dat "cat" ["/etc/lsb-release"] []
   if _code == ExitSuccess
     then do
       let tag = "DISTRIB_RELEASE="
