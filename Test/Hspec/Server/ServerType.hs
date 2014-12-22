@@ -62,10 +62,10 @@ vagrant hostname = Vagrant hostname Nothing Nothing
 
 instance ServerType Vagrant where
   stSetup a = do
-    os' <- detectOS a
     (e,conf,_) <- readProcessWithExitCode "vagrant" ["ssh-config"] []
     when (e /= ExitSuccess) $ do
       error "vagrant setup error"
+    os' <- detectOS (a {vConf = Just conf})
     return $ a {vConf = Just conf,vOS = os'}
   stOS = vOS
   stName = vHostName
