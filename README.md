@@ -1,6 +1,6 @@
 # Hspec-Server: Test Framework like ServerSpec for Haskell
 
- - [hspec-server](https://github.com/junjihashimoto/hspec-server) [![Build Status](https://travis-ci.org/junjihashimoto/hspec-server.png?branch=master)](https://travis-ci.org/junjihashimoto/hspec-server)
+[![Build Status](https://travis-ci.org/junjihashimoto/hspec-server.png?branch=master)](https://travis-ci.org/junjihashimoto/hspec-server) [![Coverage Status](https://coveralls.io/repos/junjihashimoto/hspec-server/badge.png)](https://coveralls.io/r/junjihashimoto/hspec-server)
 
 Hspec-Server is test framework for checking server's status.
 It is inspired by the Ruby library ServerSpec.

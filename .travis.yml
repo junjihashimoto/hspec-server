@@ -2,7 +2,6 @@ language: haskell
 
 ghc:
   - 7.8
-  - 7.6
 
 install:
   - sudo apt-get update
@@ -11,4 +10,8 @@ install:
   - cabal install -j --only-dep  --enable-tests --force-reinstalls
 
 script:
-  - cabal test
+  - cabal configure --enable-tests --enable-library-coverage && cabal build && cabal test
+
+after_script:
+  - cabal install hpc-coveralls
+  - hpc-coveralls --exclude-dir=tests test
