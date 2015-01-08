@@ -16,9 +16,15 @@ build-type:          Simple
 -- extra-source-files:  
 cabal-version:       >=1.10
 
+bug-reports:         https://github.com/junjihashimoto/hspec-server/issues
+
+extra-source-files:
+  ChangeLog.md
+  README.md
+
 source-repository head
-        type:           git
-        location:       https://github.com/junjihashimoto/hspec-server.git
+  type:           git
+  location:       https://github.com/junjihashimoto/hspec-server.git
 
 library
   exposed-modules:     Test.Hspec.Server
