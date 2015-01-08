@@ -2,7 +2,7 @@
 -- documentation, see http://haskell.org/cabal/users-guide/
 
 name:                hspec-server
-version:             0.3.1
+version:             0.3.2
 synopsis:            Test Framework for checking server's status
 description:         Hspec-Server is test framework for checking server's status.
                      It is inspired by the Ruby library ServerSpec.

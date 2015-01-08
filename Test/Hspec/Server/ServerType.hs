@@ -74,3 +74,18 @@ instance ServerType Vagrant where
     hClose handle
     readProcessWithExitCode "ssh" (["-F",file,stName d,c]++arg) i
 
+data Docker = Docker {
+   dContainerId :: String
+ , dOS :: !(Maybe ServerOS)
+} deriving (Show,Eq)
+
+docker :: String ->  Docker
+docker containerid = Docker containerid Nothing
+
+instance ServerType Docker where
+  stSetup a = do
+    os' <- detectOS a
+    return $ a {dOS = os'}
+  stOS = dOS
+  stName = dContainerId
+  stCmd d c arg i = readProcessWithExitCode "docker" (["exec",stName d,c]++arg) i

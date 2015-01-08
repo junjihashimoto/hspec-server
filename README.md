@@ -14,7 +14,7 @@ Install this from Hackage.
 ## Usage
 
 Put "with(ServerType)" after hspec's describe-sentence.
-Currently localhost, ssh and vagrant are supported for ServerType.
+Currently localhost, ssh , vagrant and docker(>=1.4.1) are supported for ServerType.
 Examples are below. "@>=" is like hspec's shouldBe.
 it can check multiple values.
 
@@ -28,4 +28,10 @@ it can check multiple values.
         service "cron" @>= Running
       it "command test" $ do
         command "echo" ["hoge"] [] @>=  Exit 0 <> Stdout "hoge\n"
+    describe "test for vagrant" $ with (vagrant "servername") $ do
+      it "port test" $ do
+        port 2181 @>= Listening
+    describe "test for docker" $ with (docker "containerId") $ do
+      it "port test" $ do
+        port 2181 @>= Listening
 ```
