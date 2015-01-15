@@ -11,13 +11,21 @@ main = hspec $ do
         os <- getServerOS
         liftIO $ os `shouldBe` (Just $ Ubuntu "12.04")
       it "package test" $ do
-        package "zookeeper" @>= Installed
+        package "zookeeper" @>= installed
       it "port test" $ do
-        port 2181 @>= Listening
+        port 2181 @>= listening
       it "service test" $ do
-        service "zookeeper" @>= Running
+        service "zookeeper" @>= running
       it "command test" $ do
-        command "echo" ["hoge"] [] @>=  Exit 0 <> Stdout "hoge\n"
+        command "echo" ["hoge"] [] @>= exit 0 <> stdout "hoge\n"
+        v <- command "echo" ["hoge"] []
+        v `includes'` (exit 0 <> stdout "hoge\n")
+        liftIO $ getStdout v `shouldBe` Just "hoge\n"
+        liftIO $ getStderr v `shouldBe` Just ""
       it "retry test" $ do
         retryWith 10 $
-          command "ls" [] [] @>= Exit 0
+          command "ls" [] [] @>= exit 0
+      it "network" $ do
+        host "localhost" @>= reachable
+        host "localhost" @== reachable
+        hostWithPort "localhost" 2181 @>= reachable

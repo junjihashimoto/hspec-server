@@ -7,7 +7,7 @@ import System.IO
 import Data.Monoid
 import Data.Maybe
 import Control.Monad
-import Test.Hspec.Server.Type
+import Test.Hspec.Server.Core
 
 data Localhost = Localhost {
   lOS :: !(Maybe ServerOS)

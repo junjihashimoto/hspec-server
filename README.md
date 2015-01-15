@@ -21,17 +21,17 @@ it can check multiple values.
 ```
     describe "test for localhost" $ with localhost $ do
       it "package zookeepr" $ do
-        package "zookeeper" @>= Installed
+        package "zookeeper" @>= installed
       it "port test" $ do
-        port 2181 @>= Listening
+        port 2181 @>= listening
       it "service test" $ do
-        service "cron" @>= Running
+        service "cron" @>= running
       it "command test" $ do
-        command "echo" ["hoge"] [] @>=  Exit 0 <> Stdout "hoge\n"
+        command "echo" ["hoge"] [] @>=  exit 0 <> stdout "hoge\n"
     describe "test for vagrant" $ with (vagrant "servername") $ do
       it "port test" $ do
-        port 2181 @>= Listening
+        port 2181 @>= listening
     describe "test for docker" $ with (docker "containerId") $ do
       it "port test" $ do
-        port 2181 @>= Listening
+        port 2181 @>= listening
 ```
