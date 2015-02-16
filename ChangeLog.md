@@ -1,3 +1,7 @@
+## 0.4.1
+
+* Reduce time used by stSetup
+
 ## 0.4.0
 
 * Add NetworkStatus and function for checking network-reachablity

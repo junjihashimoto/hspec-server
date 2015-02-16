@@ -5,7 +5,7 @@ module Test.Hspec.Server.Core where
 import System.Exit
 import Control.Monad.Trans.Reader
 import qualified Test.Hspec.Core.Spec as Hspec
-import Test.Hspec (before)
+import Test.Hspec (beforeAll)
 
 import Control.Monad
 import Data.List
@@ -43,7 +43,7 @@ class ServerType a where
 type ServerExample dat = ReaderT dat IO
 
 with :: ServerType dat => dat -> Hspec.SpecWith dat -> Hspec.Spec
-with d = before (stSetup d)
+with d = beforeAll (stSetup d)
 
 instance (ServerType dat) => Hspec.Example (ServerExample dat ()) where
   type Arg (ServerExample dat ()) = dat
